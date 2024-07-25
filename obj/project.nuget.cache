@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "PUOKwVxSv8g=",
+  "dgSpecHash": "8pXczFn3Y9k=",
   "success": true,
   "projectFilePath": "/home/adnangonzaga/repos/DomainEvents/DomainEvents.csproj",
   "expectedPackageFiles": [
+    "/home/adnangonzaga/.nuget/packages/bogus/35.6.0/bogus.35.6.0.nupkg.sha512",
     "/home/adnangonzaga/.nuget/packages/microsoft.aspnetcore.openapi/8.0.7/microsoft.aspnetcore.openapi.8.0.7.nupkg.sha512",
     "/home/adnangonzaga/.nuget/packages/microsoft.extensions.apidescription.server/6.0.5/microsoft.extensions.apidescription.server.6.0.5.nupkg.sha512",
     "/home/adnangonzaga/.nuget/packages/microsoft.openapi/1.4.3/microsoft.openapi.1.4.3.nupkg.sha512",

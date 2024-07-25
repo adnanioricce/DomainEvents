@@ -1,25 +1,17 @@
-void TesteDomainEvents()
-{
-    // Registre o manipulador(handler) do evento no publicador
-    DomainEvents.Register<OrderPlacedEvent>(new OrderPlacedEventHandler().Handle);
+using Microsoft.AspNetCore.Mvc;
 
-    // Crie um pedido e registre-o
-    var order = new Order(1, "Product A", 2);
-    foreach(var domainEvent in order.PlaceOrder()){
-        // Publique os eventos
-        DomainEvents.Raise(domainEvent);
-    } 
-}
-TesteDomainEvents();
-return;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddLogging();
 var app = builder.Build();
-
+// Registre o manipulador(handler) do evento no publicador
+DomainEvents.RegisterAsync(OrderEventHandlers.NotificarParceirosAsync(app.Services.GetRequiredService<ILogger>()));
+DomainEvents.RegisterAsync(OrderEventHandlers.AtualizarEstoqueAsync(app.Services.GetRequiredService<ILogger>()));
+DomainEvents.RegisterAsync(OrderEventHandlers.EnviarSmsParaClienteAsync(app.Services.GetRequiredService<ILogger>()));
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -28,31 +20,18 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
-
+app.MapPost("/orders",async ([FromServices]IOrderService orderService) => {
+    var product = RNG.GenerateProduct();
+    var quantity = RNG.RandomQuantity();
+    await foreach(var domainEvent in orderService.PlaceOrderAsync(product,quantity)){
+        await DomainEvents.RaiseAsync(domainEvent);
+    }
+});
+app.MapPost("/simpleorders",async ([FromServices]IOrderService orderService) => {
+    var product = RNG.GenerateProduct();
+    var quantity = RNG.RandomQuantity();
+    await foreach(var domainEvent in orderService.PlaceOrderAsync(product,quantity)){
+        await DomainEvents.RaiseAsync(domainEvent);
+    }
+});
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
-
