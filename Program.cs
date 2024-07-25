@@ -7,11 +7,20 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddLogging();
+builder.Services.AddTransient<IOrderService,OrderService>();
 var app = builder.Build();
 // Registre o manipulador(handler) do evento no publicador
-DomainEvents.RegisterAsync(OrderEventHandlers.NotificarParceirosAsync(app.Services.GetRequiredService<ILogger>()));
-DomainEvents.RegisterAsync(OrderEventHandlers.AtualizarEstoqueAsync(app.Services.GetRequiredService<ILogger>()));
-DomainEvents.RegisterAsync(OrderEventHandlers.EnviarSmsParaClienteAsync(app.Services.GetRequiredService<ILogger>()));
+DomainEvents.RegisterAsync(new NotificarParceirosEventHandler(app.Services.GetRequiredService<ILogger<NotificarParceirosEventHandler>>()));
+DomainEvents.RegisterAsync(new AtualizarEstoqueEventHandler(app.Services.GetRequiredService<ILogger<AtualizarEstoqueEventHandler>>()));
+DomainEvents.RegisterAsync(new EnviarSmsParaClienteEventHandler(app.Services.GetRequiredService<ILogger<EnviarSmsParaClienteEventHandler>>()));
+DomainEvents.RegisterAsync(new GerarNotaFiscalEventHandler(app.Services.GetRequiredService<ILogger<GerarNotaFiscalEventHandler>>()));
+// DomainEvents.RegisterAsync(new ProdutoCriadoEventHandler(app.Services.GetRequiredService<ILogger<ProdutoCriadoEventHandler>>()));
+// com DI
+// DomainEventsWithDI.Initialize(app.Services);
+// DomainEventsWithDI.RegisterAsync<PedidoRealizadoEvent,NotificarParceirosEventHandler>();
+// DomainEventsWithDI.RegisterAsync<PedidoRealizadoEvent,AtualizarEstoqueEventHandler>();
+// DomainEventsWithDI.RegisterAsync<PedidoRealizadoEvent,EnviarSmsParaClienteEventHandler>();
+// DomainEventsWithDI.RegisterAsync<PedidoRealizadoEvent,GerarNotaFiscalEventHandler>();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -23,15 +32,18 @@ app.UseHttpsRedirection();
 app.MapPost("/orders",async ([FromServices]IOrderService orderService) => {
     var product = RNG.GenerateProduct();
     var quantity = RNG.RandomQuantity();
-    await foreach(var domainEvent in orderService.PlaceOrderAsync(product,quantity)){
+    var domainEvents = orderService.PlaceOrderAsync(product,quantity);
+    await foreach(var domainEvent in domainEvents){
         await DomainEvents.RaiseAsync(domainEvent);
     }
+    return Results.Ok(new {
+        domainEvents
+    });
 });
 app.MapPost("/simpleorders",async ([FromServices]IOrderService orderService) => {
     var product = RNG.GenerateProduct();
     var quantity = RNG.RandomQuantity();
-    await foreach(var domainEvent in orderService.PlaceOrderAsync(product,quantity)){
-        await DomainEvents.RaiseAsync(domainEvent);
-    }
+    var order = await orderService.SimplePlaceOrderAsync(product,quantity);
+    return Results.Ok(order);
 });
 app.Run();

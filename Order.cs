@@ -1,5 +1,6 @@
 
 
+
 public record Order(int Id,string Product,int Quantity)
 {
 }
@@ -11,33 +12,44 @@ public sealed class ProdutoCriado(int orderId) : DomainEvent
 {
     public int OrderId => orderId;
 }
-public static partial class OrderEventHandlers 
+public class NotificarParceirosEventHandler(ILogger<NotificarParceirosEventHandler> logger) : IEventHandlerAsync<PedidoRealizadoEvent>
 {
-    public static HandleAsync<PedidoRealizadoEvent> NotificarParceirosAsync(ILogger logger)
+    public async Task Handle(PedidoRealizadoEvent @event, CancellationToken token = default)
     {
-        return async (PedidoRealizadoEvent @event) => {
-            logger.LogInformation("Notificado parceiros de que novo pedido de Id = {orderId} foi realizado.",@event.OrderId);
-        };
+        logger.LogInformation("Notificado parceiros de que novo pedido de Id = {orderId} foi realizado.",@event.OrderId);
     }
+}
+public class AtualizarEstoqueEventHandler(ILogger<AtualizarEstoqueEventHandler> _logger) : IEventHandlerAsync<PedidoRealizadoEvent>
+{
+    public async Task Handle(PedidoRealizadoEvent @event, CancellationToken token = default)
+    {
+        _logger.LogInformation("Atualizando estoque resultante do pedido Id = {orderId} realizado às {createdAt}.", @event.OrderId, @event.CreatedAt);
+        await Task.CompletedTask;
+    }
+}
 
-    public static HandleAsync<PedidoRealizadoEvent> AtualizarEstoqueAsync(ILogger logger)
+public class EnviarSmsParaClienteEventHandler(ILogger<EnviarSmsParaClienteEventHandler> _logger) : IEventHandlerAsync<PedidoRealizadoEvent>
+{
+    public async Task Handle(PedidoRealizadoEvent @event, CancellationToken token = default)
     {
-        return async (PedidoRealizadoEvent @event) => {
-            logger.LogInformation("Atualizando estoque resultando do pedido Id = {orderId} realizado as {createdAt}.",@event.OrderId,@event.CreatedAt);
-        };
+        _logger.LogInformation("Notificando clientes que realizaram o pedido Id = {orderId} realizado às {createdAt}.", @event.OrderId, @event.CreatedAt);
+        await Task.CompletedTask;
     }
+}
 
-    public static HandleAsync<PedidoRealizadoEvent> EnviarSmsParaClienteAsync(ILogger logger)
+public class GerarNotaFiscalEventHandler(ILogger<GerarNotaFiscalEventHandler> _logger) : IEventHandlerAsync<PedidoRealizadoEvent>
+{
+    public async Task Handle(PedidoRealizadoEvent @event, CancellationToken token = default)
     {
-        return async (PedidoRealizadoEvent @event) => {            
-            logger.LogInformation("Notificando clientes que realizaram o pedido Id = {orderId} realizado as {createdAt}.",@event.OrderId,@event.CreatedAt);
-        };
+        _logger.LogInformation("Gerando nota fiscal do pedido Id = {orderId} realizado às {createdAt}.", @event.OrderId, @event.CreatedAt);
+        await Task.CompletedTask;
     }
-    public static HandleAsync<PedidoRealizadoEvent> GerarNotaFiscalAsync(ILogger logger)
+}
+public class ProdutoCriadoEventHandler(ILogger<ProdutoCriadoEventHandler> _logger) : IEventHandlerAsync<ProdutoCriado>
+{
+    public Task Handle(ProdutoCriado @event, CancellationToken token = default)
     {
-        return async (PedidoRealizadoEvent @event) => {            
-            logger.LogInformation("Gerando nota fiscal do pedido Id = {orderId} realizado as {createdAt}.",@event.OrderId,@event.CreatedAt);
-        };
+        throw new NotImplementedException();
     }
 }
 public interface IOrderService
