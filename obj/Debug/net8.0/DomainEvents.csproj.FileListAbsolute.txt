@@ -31,3 +31,7 @@
 /home/adnangonzaga/repos/DomainEvents/obj/Debug/net8.0/DomainEvents.pdb
 /home/adnangonzaga/repos/DomainEvents/obj/Debug/net8.0/DomainEvents.genruntimeconfig.cache
 /home/adnangonzaga/repos/DomainEvents/obj/Debug/net8.0/ref/DomainEvents.dll
+/home/adnangonzaga/repos/DomainEvents/bin/Debug/net8.0/Bogus.dll
+/home/adnangonzaga/repos/DomainEvents/bin/Debug/net8.0/MediatR.dll
+/home/adnangonzaga/repos/DomainEvents/bin/Debug/net8.0/MediatR.Contracts.dll
+/home/adnangonzaga/repos/DomainEvents/bin/Debug/net8.0/MediatR.Extensions.Microsoft.DependencyInjection.dll

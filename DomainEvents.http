@@ -1,6 +1,6 @@
 @DomainEvents_HostAddress = http://localhost:5213
 
-GET {{DomainEvents_HostAddress}}/weatherforecast/
+POST {{DomainEvents_HostAddress}}/orders/
 Accept: application/json
 
 ###

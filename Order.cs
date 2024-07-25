@@ -1,12 +1,14 @@
-public class Order
+
+using MediatR;
+
+public record Order
 {    
-    public int Id { get; private set; }
+    public int Id { get; private set; } = RNG.RandomQuantity();
     public string Product { get; private set; }
     public int Quantity { get; private set; }
 
-    public Order(int id, string product, int quantity)
-    {
-        Id = id;
+    public Order(string product, int quantity)
+    {        
         Product = product;
         Quantity = quantity;
     }
@@ -31,15 +33,58 @@ public sealed class OrderPlacedEvent : DomainEvent
 }
 public sealed class OrderPlacedEventHandler : IDomainHandler<OrderPlacedEvent>
 {
-    public void Handle(OrderPlacedEvent domainEvent)
+    private readonly ILogger<OrderPlacedEventHandler> _logger;
+    public OrderPlacedEventHandler(ILogger<OrderPlacedEventHandler> logger)
     {
-        Console.WriteLine($"Order with Id {domainEvent.OrderId} has been placed.");
+        _logger = logger;
+    }
+    public async Task Handle(OrderPlacedEvent notification, CancellationToken cancellationToken = default)
+    {
+        var order = await OrderRepository.GetAsync(notification.OrderId);
+        _logger.LogInformation("OrderPlacedEvent fired at {dateCreated}",notification.CreatedAt);
+        _logger.LogInformation("Order with Id {orderId} has been placed.",notification.OrderId);
+        _logger.LogInformation("Order placed = {order}",order);
     }
 }
-public static partial class OrderEventHandlers 
+public sealed class NotificarParceirosEventHandler : IDomainHandler<OrderPlacedEvent>
 {
-    public static HandleAsync<OrderPlacedEvent> NotificarParceirosAsync = async (OrderPlacedEvent @event) => 
+    private readonly ILogger<NotificarParceirosEventHandler> _logger;
+    public NotificarParceirosEventHandler(ILogger<NotificarParceirosEventHandler> logger)
     {
-        Console.WriteLine("Notificado parceiros de que novo pedido foi realizado.");           
-    };
+        _logger = logger;
+    }
+    public async Task Handle(OrderPlacedEvent notification, CancellationToken cancellationToken)
+    {
+        var order = await OrderRepository.GetAsync(notification.OrderId);
+        _logger.LogInformation("Notificando parceiros: pedido com Id = {orderId} foi registrado as {createdAt}.",notification.OrderId,notification.CreatedAt);
+        _logger.LogInformation("Dados do pedido Id = {orderId} -> {order}",notification.OrderId,order);
+    }
+}
+
+public interface IOrderService
+{
+    IAsyncEnumerable<DomainEvent> PlaceOrderAsync(string product,int quantity);
+    Task<Order> SimplePlaceOrderAsync(string product,int quantity);
+}
+public sealed class OrderService : IOrderService
+{
+    private readonly IMediator _mediator;
+    public OrderService(IMediator mediator)
+    {
+        _mediator = mediator;
+    }
+    public async IAsyncEnumerable<DomainEvent> PlaceOrderAsync(string product,int quantity){        
+        var order = new Order(product,quantity);
+        
+        //Faça alguma coisa com o pedido;
+        await OrderRepository.Insert(order);
+        yield return new OrderPlacedEvent(order.Id);
+    }
+    public async Task<Order> SimplePlaceOrderAsync(string product,int quantity){        
+        var order = new Order(product,quantity);        
+        //Faça alguma coisa com o pedido;
+        await OrderRepository.Insert(order);
+        await _mediator.Publish(new OrderPlacedEvent(order.Id));
+        return order;
+    }    
 }
